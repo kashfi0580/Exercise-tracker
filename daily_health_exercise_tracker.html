@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Health & Exercise Tracker with Visual Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-20">
+
+  <!-- Main App Shell -->
+  <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col justify-between relative">
+    
+    <!-- Header -->
+    <header class="bg-teal-700 text-white p-4 rounded-b-2xl shadow-md sticky top-0 z-20">
+      <div class="flex justify-between items-center mb-2">
+        <div>
+          <h1 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-heart-pulse text-teal-200"></i> Daily Movement Plan
+          </h1>
+          <p class="text-[11px] text-teal-100">Tailored stretches & safe low-impact cardio</p>
+        </div>
+        <button id="today-btn" class="bg-teal-800 hover:bg-teal-900 text-xs px-3 py-1.5 rounded-full font-medium transition shadow-sm">
+          Today
+        </button>
+      </div>
+
+      <!-- Date Strip (Only shown on Tracker Tab) -->
+      <div id="date-strip" class="flex items-center justify-between bg-teal-800/60 rounded-xl p-1.5 mt-2 text-xs">
+        <button id="prev-date" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-teal-700">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div id="current-date-display" class="font-semibold text-teal-50">Loading date...</div>
+        <button id="next-date" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-teal-700">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="p-4 flex-1 space-y-6 custom-scrollbar">
+
+      <!-- TAB 1: TRACKER -->
+      <div id="tab-tracker" class="tab-content active space-y-5">
+        
+        <!-- Progress Summary -->
+        <section class="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl p-4 text-white shadow-sm">
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-[11px] font-semibold tracking-wider uppercase text-teal-100">Daily Completion</span>
+            <span id="progress-percent" class="text-base font-bold">0%</span>
+          </div>
+          <div class="w-full bg-teal-950/30 rounded-full h-2.5 overflow-hidden">
+            <div id="progress-bar" class="bg-amber-300 h-2.5 rounded-full transition-all duration-500 w-0"></div>
+          </div>
+          <div class="flex justify-between items-center mt-2.5 text-[11px] text-teal-100">
+            <span id="completed-count">0 of 9 tasks complete</span>
+            <span id="sync-status" class="flex items-center gap-1">
+              <i class="fa-solid fa-cloud-arrow-up text-teal-200"></i> Synced
+            </span>
+          </div>
+        </section>
+
+        <!-- Safety Warning -->
+        <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r-xl text-xs text-amber-900 flex items-start gap-2.5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm mt-0.5"></i>
+          <div>
+            <strong class="font-semibold">Safety First:</strong> Avoid over-straining. Stop if sharp heel pain, uterine pressure, or abdominal pain occurs.
+          </div>
+        </div>
+
+        <!-- Morning Routine Block -->
+        <section class="space-y-2.5">
+          <div class="flex items-center justify-between border-b pb-1 border-slate-200">
+            <h2 class="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-sun text-amber-500 text-sm"></i> 1. Morning (In Bed / Seated)
+            </h2>
+            <span class="text-[10px] text-slate-400 font-medium">~10 mins</span>
+          </div>
+          <div class="space-y-2" id="morning-tasks"></div>
+        </section>
+
+        <!-- Afternoon Routine Block -->
+        <section class="space-y-2.5">
+          <div class="flex items-center justify-between border-b pb-1 border-slate-200">
+            <h2 class="text-xs font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-person-biking text-blue-500 text-sm"></i> 2. Afternoon Cardio & Stretch
+            </h2>
+            <span class="text-[10px] text-slate-400 font-medium">~20 mins</span>
+          </div>
+          <div class="space-y-2" id="afternoon-tasks"></div>
+        </section>
+
+        <!-- Evening Routine Block -->
+        <section class="space-y-2.5">
+          <div class="flex items-center justify-between border-b pb-1 border-slate-200">
+            <h2 class="text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-moon text-indigo-500 text-sm"></i> 3. Evening Relief & Mobility
+            </h2>
+            <span class="text-[10px] text-slate-400 font-medium">~10 mins</span>
+          </div>
+          <div class="space-y-2" id="evening-tasks"></div>
+        </section>
+
+        <!-- Daily Notes -->
+        <section class="bg-slate-100 rounded-xl p-3 space-y-1.5">
+          <label for="daily-notes" class="text-xs font-semibold text-slate-700 flex items-center justify-between">
+            <span><i class="fa-solid fa-pen-to-square text-teal-600"></i> Daily Notes / Symptoms</span>
+            <span class="text-[10px] text-slate-400">(Auto-saved)</span>
+          </label>
+          <textarea id="daily-notes" rows="2" placeholder="e.g. Feet felt flexible this morning, no heel pain..." class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white"></textarea>
+        </section>
+
+      </div>
+
+      <!-- TAB 2: VISUAL GUIDE -->
+      <div id="tab-guide" class="tab-content space-y-6">
+        <div class="bg-teal-50 border border-teal-200 rounded-xl p-3 text-xs text-teal-900">
+          <p class="font-semibold mb-1"><i class="fa-solid fa-image text-teal-600"></i> Visual Form Diagrams</p>
+          <p class="text-teal-700">Review proper body alignment and foot positioning before performing each movement.</p>
+        </div>
+
+        <div id="guide-cards-container" class="space-y-5">
+          <!-- Populated dynamically with visual cards -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-slate-200 flex justify-around p-2 z-30 shadow-lg">
+      <button id="nav-tracker" class="flex-1 py-1.5 flex flex-col items-center gap-1 text-teal-700 font-bold transition">
+        <i class="fa-solid fa-list-check text-base"></i>
+        <span class="text-[10px]">Daily Tracker</span>
+      </button>
+      <button id="nav-guide" class="flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-teal-600 font-semibold transition">
+        <i class="fa-solid fa-book-open-reader text-base"></i>
+        <span class="text-[10px]">Visual Guide</span>
+      </button>
+    </nav>
+
+    <!-- Modal for Detailed Instructions + Visual SVG -->
+    <div id="info-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+      <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto custom-scrollbar">
+        
+        <div class="flex justify-between items-start border-b pb-2">
+          <h3 id="modal-title" class="font-bold text-teal-800 text-sm">Exercise Title</h3>
+          <button id="close-modal" class="text-slate-400 hover:text-slate-600 w-7 h-7 flex items-center justify-center">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- SVG Diagram Container in Modal -->
+        <div id="modal-svg-container" class="bg-slate-50 border border-slate-200 rounded-xl p-2 flex items-center justify-center min-h-[140px]">
+        </div>
+        
+        <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+          <div>
+            <h4 class="font-bold text-slate-800 mb-0.5 flex items-center gap-1.5 text-teal-700">
+              <i class="fa-solid fa-circle-play"></i> Instructions:
+            </h4>
+            <p id="modal-instructions">Step by step guide...</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 mb-0.5 flex items-center gap-1.5 text-emerald-700">
+              <i class="fa-solid fa-bullseye"></i> Goal / Benefit:
+            </h4>
+            <p id="modal-purpose">Why we do this...</p>
+          </div>
+          <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+            <h4 class="font-semibold text-amber-900 mb-0.5 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-amber-600"></i> Safety Guard:
+            </h4>
+            <p id="modal-safety" class="text-amber-800">Safety guidance...</p>
+          </div>
+        </div>
+
+        <button id="modal-ok-btn" class="w-full py-2.5 bg-teal-700 text-white rounded-xl text-xs font-semibold hover:bg-teal-800 transition">
+          Got it!
+        </button>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2 rounded-full shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none z-50">
+      Saved progress
+    </div>
+
+  </div>
+
+  <!-- Firebase & Application Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // SVG Diagrams Generator for High-Clarity Exercise Guidance
+    const SVG_DIAGRAMS = {
+      towel_stretch: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <!-- Bed/Floor Line -->
+          <line x1="20" y1="120" x2="280" y2="120" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="4"/>
+          <!-- Seated Torso -->
+          <path d="M 60 115 L 75 60 L 95 65" fill="none" stroke="#0d9488" stroke-width="6" stroke-linecap="round"/>
+          <!-- Head -->
+          <circle cx="75" cy="45" r="12" fill="#0d9488"/>
+          <!-- Extended Legs (Straight) -->
+          <path d="M 75 115 L 170 115 L 230 115" fill="none" stroke="#0d9488" stroke-width="6" stroke-linecap="round"/>
+          <!-- Foot pointing slightly back -->
+          <path d="M 230 115 L 230 95" fill="none" stroke="#0d9488" stroke-width="5" stroke-linecap="round"/>
+          <!-- Towel around ball of foot -->
+          <path d="M 100 75 Q 160 85 230 95" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="3,3"/>
+          <path d="M 95 65 L 115 75" fill="none" stroke="#0d9488" stroke-width="4" stroke-linecap="round"/>
+          <!-- Tension Arrows -->
+          <path d="M 180 80 L 140 73" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow)"/>
+          <!-- Text Annotation -->
+          <text x="150" y="40" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Straight Knee & Towel Pull</text>
+          <text x="235" y="80" font-size="10" fill="#ef4444" font-weight="bold">Fascia Tension</text>
+        </svg>
+      `,
+      seated_pf_stretch: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <!-- Chair -->
+          <path d="M 80 80 L 80 130 M 130 90 L 130 130 M 70 85 L 130 85" stroke="#94a3b8" stroke-width="4" fill="none"/>
+          <!-- Body seated -->
+          <circle cx="95" cy="40" r="11" fill="#0d9488"/>
+          <path d="M 95 50 L 95 85 L 130 85" fill="none" stroke="#0d9488" stroke-width="6"/>
+          <!-- Crossed Leg -->
+          <path d="M 95 85 L 125 105 L 155 85 L 180 85" fill="none" stroke="#0d9488" stroke-width="6" stroke-linecap="round"/>
+          <!-- Hand pulling toes -->
+          <circle cx="185" cy="80" r="4" fill="#f59e0b"/>
+          <path d="M 125 60 L 180 75" fill="none" stroke="#0d9488" stroke-width="3"/>
+          <!-- Arrow pointing to Arch stretch -->
+          <path d="M 190 70 Q 175 60 165 75" fill="none" stroke="#ef4444" stroke-width="2"/>
+          <text x="200" y="45" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Pull Toes Toward Shin</text>
+          <text x="200" y="110" font-size="10" fill="#ef4444">Stretches Arch</text>
+        </svg>
+      `,
+      pelvic_tilts: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <line x1="20" y1="115" x2="280" y2="115" stroke="#cbd5e1" stroke-width="3"/>
+          <!-- Lying Spine & Head -->
+          <circle cx="45" cy="102" r="10" fill="#0d9488"/>
+          <path d="M 55 108 L 130 108" fill="none" stroke="#0d9488" stroke-width="6"/>
+          <!-- Bent Knees -->
+          <path d="M 130 108 L 170 70 L 210 115" fill="none" stroke="#0d9488" stroke-width="6" stroke-linejoin="round"/>
+          <!-- Downward Arrow on Abdomen -->
+          <path d="M 100 80 L 100 100" stroke="#ef4444" stroke-width="3" fill="none"/>
+          <polygon points="95,98 100,107 105,98" fill="#ef4444"/>
+          <text x="100" y="65" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Flatten Back to Floor</text>
+          <text x="210" y="60" font-size="10" fill="#64748b">Feet Flat</text>
+        </svg>
+      `,
+      treadmill_walk: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <!-- Treadmill Structure -->
+          <rect x="40" y="110" width="220" height="12" rx="4" fill="#334155"/>
+          <path d="M 230 110 L 230 50 L 200 50" fill="none" stroke="#475569" stroke-width="4"/>
+          <!-- Walking Person -->
+          <circle cx="120" cy="35" r="10" fill="#0d9488"/>
+          <path d="M 120 45 L 120 75" stroke="#0d9488" stroke-width="5"/>
+          <!-- Legs walking (Upright posture) -->
+          <path d="M 120 75 L 100 110 M 120 75 L 145 110" stroke="#0d9488" stroke-width="5" stroke-linecap="round"/>
+          <!-- Cushion Shoe Highlight -->
+          <circle cx="145" cy="110" r="4" fill="#f59e0b"/>
+          <circle cx="100" cy="110" r="4" fill="#f59e0b"/>
+          <text x="130" y="25" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Upright & Cushioned Sneakers</text>
+          <text x="70" y="138" font-size="10" fill="#d97706" font-weight="bold">5 Mins Flat Warm-up</text>
+        </svg>
+      `,
+      stationary_bike: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <!-- Bike Frame -->
+          <path d="M 90 120 L 130 80 L 180 80 L 210 120 M 130 80 L 130 60 M 180 80 L 190 55" stroke="#64748b" stroke-width="4" fill="none"/>
+          <!-- Wheels -->
+          <circle cx="90" cy="120" r="18" fill="none" stroke="#94a3b8" stroke-width="3"/>
+          <circle cx="210" cy="120" r="18" fill="none" stroke="#94a3b8" stroke-width="3"/>
+          <!-- Cyclist -->
+          <circle cx="130" cy="35" r="10" fill="#0d9488"/>
+          <path d="M 130 45 L 135 70 L 160 88" stroke="#0d9488" stroke-width="5" fill="none"/>
+          <path d="M 135 70 L 185 58" stroke="#0d9488" stroke-width="3"/> <!-- Arms -->
+          <!-- Foot Position Highlight (Midfoot on pedal) -->
+          <circle cx="160" cy="88" r="5" fill="#ef4444"/>
+          <text x="180" y="30" font-size="11" font-weight="bold" fill="#0f766e">Midfoot / Heel on Pedal</text>
+          <text x="180" y="45" font-size="9" fill="#ef4444">Protect Plantar Fascia</text>
+        </svg>
+      `,
+      wall_calf_stretch: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <!-- Wall & Floor -->
+          <line x1="220" y1="20" x2="220" y2="130" stroke="#64748b" stroke-width="4"/>
+          <line x1="20" y1="130" x2="280" y2="130" stroke="#cbd5e1" stroke-width="3"/>
+          <!-- Body Leaning into Wall -->
+          <circle cx="120" cy="40" r="10" fill="#0d9488"/>
+          <path d="M 120 50 L 150 75" stroke="#0d9488" stroke-width="5"/>
+          <path d="M 140 60 L 220 55" stroke="#0d9488" stroke-width="4"/> <!-- Arms pushing -->
+          <!-- Front Leg Bent, Back Leg Straight -->
+          <path d="M 150 75 L 185 130" stroke="#0d9488" stroke-width="5"/> <!-- Front -->
+          <path d="M 150 75 L 80 130" stroke="#0d9488" stroke-width="5"/> <!-- Back straight -->
+          <!-- Back Heel Flat Highlight -->
+          <ellipse cx="80" cy="130" rx="8" ry="3" fill="#ef4444"/>
+          <text x="100" y="30" font-size="11" font-weight="bold" fill="#0f766e">Keep Back Heel Flat</text>
+          <text x="50" y="105" font-size="10" fill="#ef4444">Calf Stretch</text>
+        </svg>
+      `,
+      ice_bottle_roll: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <!-- Seated Leg Lower Part -->
+          <path d="M 90 20 L 130 80 L 190 95" stroke="#0d9488" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <!-- Frozen Bottle under Arch -->
+          <rect x="145" y="102" width="40" height="18" rx="6" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+          <line x1="20" y1="122" x2="280" y2="122" stroke="#cbd5e1" stroke-width="3"/>
+          <!-- Rolling Arrows -->
+          <path d="M 130 110 L 200 110" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3"/>
+          <text x="165" y="45" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Roll Arch Over Ice Bottle</text>
+          <text x="165" y="65" font-size="10" fill="#0284c7" text-anchor="middle">Reduces Heel Inflammation</text>
+        </svg>
+      `,
+      glute_bridges: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <line x1="20" y1="125" x2="280" y2="125" stroke="#cbd5e1" stroke-width="3"/>
+          <!-- Head on Mat -->
+          <circle cx="50" cy="115" r="10" fill="#0d9488"/>
+          <!-- Raised Hips Straight Line -->
+          <path d="M 60 120 L 140 80 L 200 125" stroke="#0d9488" stroke-width="6" fill="none" stroke-linejoin="round"/>
+          <!-- Upward Arrow -->
+          <path d="M 130 110 L 130 90" stroke="#ef4444" stroke-width="3" fill="none"/>
+          <polygon points="125,93 130,83 135,93" fill="#ef4444"/>
+          <text x="140" y="45" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Squeeze Glutes & Lift Hips</text>
+          <text x="140" y="62" font-size="10" fill="#ef4444" text-anchor="middle">No Abdominal Straining</text>
+        </svg>
+      `,
+      cat_cow: `
+        <svg viewBox="0 0 300 150" class="w-full h-32">
+          <rect width="300" height="150" fill="#f8fafc" rx="8"/>
+          <line x1="20" y1="120" x2="280" y2="120" stroke="#cbd5e1" stroke-width="3"/>
+          <!-- Quadruped Position -->
+          <circle cx="70" cy="65" r="9" fill="#0d9488"/>
+          <!-- Arched Spine -->
+          <path d="M 75 72 Q 130 95 180 72" stroke="#0d9488" stroke-width="5" fill="none"/>
+          <!-- Arms & Thighs -->
+          <path d="M 80 75 L 80 120 M 175 75 L 175 120" stroke="#0d9488" stroke-width="5"/>
+          <text x="130" y="35" font-size="11" font-weight="bold" fill="#0f766e" text-anchor="middle">Fluid Spinal Arch & Dip</text>
+          <text x="130" y="50" font-size="10" fill="#64748b" text-anchor="middle">Gentle Lower-Back & Pelvic Relief</text>
+        </svg>
+      `
+    };
+
+    // Exercise Library Data
+    const EXERCISES = [
+      {
+        id: "towel_stretch",
+        section: "morning",
+        title: "Towel Calf & Foot Stretch",
+        subtitle: "3 mins (Before getting out of bed)",
+        icon: "fa-socks",
+        instructions: "Sit up in bed with your legs straight. Loop a towel around the ball of one foot. Gently pull toward your shin while keeping your knee straight. Hold for 20-30 seconds per leg.",
+        purpose: "Loosens the tight plantar fascia and calf muscles overnight, preventing acute heel pain on your first morning steps.",
+        safety: "Do not pull forcibly; feel a mild, comfortable pull behind your calf."
+      },
+      {
+        id: "seated_pf_stretch",
+        section: "morning",
+        title: "Seated Plantar Fascia Stretch",
+        subtitle: "2 mins (Cross-legged)",
+        icon: "fa-foot-prints",
+        instructions: "Sit on a chair, cross your left ankle over your right knee. Pull your toes back toward your shin until you feel tension along the arch. Hold 20 seconds, repeat 3x each foot.",
+        purpose: "Directly stretches the plantar fascia ligament.",
+        safety: "Avoid stretching to the point of pain; keep it gentle."
+      },
+      {
+        id: "pelvic_tilts",
+        section: "morning",
+        title: "Gentle Pelvic Tilts",
+        subtitle: "10 reps",
+        icon: "fa-mattress-pillow",
+        instructions: "Lie flat on your back with knees bent. Gently press your lower back into the floor by tightening your abdominal muscles. Hold 5 seconds, then release.",
+        purpose: "Activates deep core muscles without straining your lower abdomen or pelvic fibroids.",
+        safety: "Do not hold your breath. Stop if pelvic pain occurs."
+      },
+      {
+        id: "treadmill_walk",
+        section: "afternoon",
+        title: "Treadmill Warm-up Walk",
+        subtitle: "5 mins MAX (Flat incline)",
+        icon: "fa-person-walking-treadmill",
+        instructions: "Walk at a comfortable, flat, steady pace (2.0 - 2.5 mph) wearing well-cushioned shoes. Stop at 5 minutes to prevent motor overheating.",
+        purpose: "Gentle cardiovascular warm-up and joint lubrication.",
+        safety: "Always wear supportive sneakers. Never walk barefoot."
+      },
+      {
+        id: "stationary_bike",
+        section: "afternoon",
+        title: "Stationary Bike Ride",
+        subtitle: "10–15 mins (Low to Medium resistance)",
+        icon: "fa-bicycle",
+        instructions: "Cycle smoothly. Place the pedal underneath your MIDFOOT or HEEL (not your toes) to take stress off your arch.",
+        purpose: "Low-impact non-weight-bearing aerobic exercise that protects your feet.",
+        safety: "Keep chest up to avoid gallbladder/upper abdominal compression."
+      },
+      {
+        id: "wall_calf_stretch",
+        section: "afternoon",
+        title: "Wall Calf Stretch",
+        subtitle: "3 mins",
+        icon: "fa-child-reaching",
+        instructions: "Stand facing a wall. Step one leg back, keep heel flat on floor, bend front knee. Hold 30 secs. Then slightly bend back knee to stretch deeper Achilles.",
+        purpose: "Relieves calf tension built up during daytime standing.",
+        safety: "Keep heels firmly rooted."
+      },
+      {
+        id: "ice_bottle_roll",
+        section: "evening",
+        title: "Frozen Water Bottle Roll",
+        subtitle: "3-5 mins per foot",
+        icon: "fa-bottle-water",
+        instructions: "Sit comfortably and roll the arch of your foot back and forth over a frozen water bottle or iced tennis ball.",
+        purpose: "Reduces plantar fascia inflammation and provides pain relief.",
+        safety: "Place a thin cloth over the bottle if cold feels too intense."
+      },
+      {
+        id: "glute_bridges",
+        section: "evening",
+        title: "Gentle Glute Bridges",
+        subtitle: "10 reps",
+        icon: "fa-spa",
+        instructions: "Lie on back with knees bent. Squeeze glutes and raise hips until your body forms a straight line from knees to shoulders. Hold 3 secs and lower gently.",
+        purpose: "Strengthens posterior chain and hips to support walking gait.",
+        safety: "Avoid arching lower back excessively."
+      },
+      {
+        id: "cat_cow",
+        section: "evening",
+        title: "Cat-Cow Spine Mobility",
+        subtitle: "2 mins",
+        icon: "fa-shield-cat",
+        instructions: "On hands and knees (or seated in a chair), gently arch your back looking slightly up, then round your spine tucking your chin. Move slowly.",
+        purpose: "Promotes spinal flexibility without core pressure.",
+        safety: "Keep movements small and fluid."
+      }
+    ];
+
+    // Firebase Init
+    const firebaseConfig = typeof __firebase_config !== 'undefined' 
+      ? JSON.parse(__firebase_config) 
+      : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo" };
+    
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'health-tracker';
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // App State
+    let currentUser = null;
+    let selectedDate = getFormattedDate(new Date());
+    let currentLog = {};
+    let unsubscribeSnapshot = null;
+
+    function getFormattedDate(d) {
+      return d.toISOString().split('T')[0];
+    }
+
+    function getReadableDate(dateStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      const todayStr = getFormattedDate(new Date());
+      
+      if (dateStr === todayStr) return "Today (" + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ")";
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      setupNavigation();
+      setupDateControls();
+      renderTasks();
+      renderVisualGuideCards();
+      setupModal();
+      setupNotesListener();
+
+      // Auth Initialization
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.warn("Auth initialization note:", err.message);
+      }
+
+      onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user) {
+          listenToDateLog(selectedDate);
+        }
+      });
+    });
+
+    // Navigation Bar Handler
+    function setupNavigation() {
+      const btnTracker = document.getElementById('nav-tracker');
+      const btnGuide = document.getElementById('nav-guide');
+      const tabTracker = document.getElementById('tab-tracker');
+      const tabGuide = document.getElementById('tab-guide');
+      const dateStrip = document.getElementById('date-strip');
+
+      btnTracker.addEventListener('click', () => {
+        tabTracker.classList.add('active');
+        tabGuide.classList.remove('active');
+        dateStrip.classList.remove('hidden');
+
+        btnTracker.className = "flex-1 py-1.5 flex flex-col items-center gap-1 text-teal-700 font-bold transition";
+        btnGuide.className = "flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-teal-600 font-semibold transition";
+      });
+
+      btnGuide.addEventListener('click', () => {
+        tabGuide.classList.add('active');
+        tabTracker.classList.remove('active');
+        dateStrip.classList.add('hidden');
+
+        btnGuide.className = "flex-1 py-1.5 flex flex-col items-center gap-1 text-teal-700 font-bold transition";
+        btnTracker.className = "flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-teal-600 font-semibold transition";
+      });
+    }
+
+    // Setup Date Strip
+    function setupDateControls() {
+      const dateDisplay = document.getElementById('current-date-display');
+      dateDisplay.textContent = getReadableDate(selectedDate);
+
+      document.getElementById('prev-date').addEventListener('click', () => changeDate(-1));
+      document.getElementById('next-date').addEventListener('click', () => changeDate(1));
+      document.getElementById('today-btn').addEventListener('click', () => {
+        selectedDate = getFormattedDate(new Date());
+        updateDateUI();
+      });
+    }
+
+    function changeDate(days) {
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const d = new Date(year, month - 1, day);
+      d.setDate(d.getDate() + days);
+      selectedDate = getFormattedDate(d);
+      updateDateUI();
+    }
+
+    function updateDateUI() {
+      document.getElementById('current-date-display').textContent = getReadableDate(selectedDate);
+      if (currentUser) {
+        listenToDateLog(selectedDate);
+      }
+    }
+
+    // Subscribe to Firestore Log
+    function listenToDateLog(dateStr) {
+      if (!currentUser) return;
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+      const logDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'exerciseLogs', dateStr);
+      document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-sync fa-spin text-teal-200"></i> Syncing`;
+
+      unsubscribeSnapshot = onSnapshot(logDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          currentLog = docSnap.data() || {};
+        } else {
+          currentLog = { completed: {}, notes: "" };
+        }
+        updateTaskCheckboxes();
+        updateProgressSummary();
+        document.getElementById('daily-notes').value = currentLog.notes || "";
+        document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud-check text-teal-200"></i> Synced`;
+      }, (error) => {
+        console.warn("Firestore listener warning:", error.message);
+        document.getElementById('sync-status').innerHTML = `<i class="fa-solid fa-cloud text-amber-300"></i> Offline`;
+      });
+    }
+
+    // Render Checklist Tasks
+    function renderTasks() {
+      const morningContainer = document.getElementById('morning-tasks');
+      const afternoonContainer = document.getElementById('afternoon-tasks');
+      const eveningContainer = document.getElementById('evening-tasks');
+
+      morningContainer.innerHTML = '';
+      afternoonContainer.innerHTML = '';
+      eveningContainer.innerHTML = '';
+
+      EXERCISES.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = "bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between transition hover:border-teal-300";
+        card.innerHTML = `
+          <div class="flex items-center gap-3 flex-1 cursor-pointer select-none" data-task-id="${item.id}">
+            <div id="check-icon-${item.id}" class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-white transition-all">
+              <i class="fa-solid fa-check text-xs opacity-0"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid ${item.icon} text-teal-600 text-xs"></i> ${item.title}
+              </h3>
+              <p class="text-[11px] text-slate-400">${item.subtitle}</p>
+            </div>
+          </div>
+          <button class="info-btn text-slate-400 hover:text-teal-600 p-2" data-exercise-id="${item.id}">
+            <i class="fa-solid fa-circle-info text-base"></i>
+          </button>
+        `;
+
+        card.querySelector(`[data-task-id="${item.id}"]`).addEventListener('click', () => toggleTask(item.id));
+        card.querySelector(`.info-btn`).addEventListener('click', (e) => {
+          e.stopPropagation();
+          showExerciseInfo(item);
+        });
+
+        if (item.section === 'morning') morningContainer.appendChild(card);
+        else if (item.section === 'afternoon') afternoonContainer.appendChild(card);
+        else if (item.section === 'evening') eveningContainer.appendChild(card);
+      });
+    }
+
+    // Render Visual Guide Cards
+    function renderVisualGuideCards() {
+      const container = document.getElementById('guide-cards-container');
+      container.innerHTML = '';
+
+      EXERCISES.forEach((item) => {
+        const guideCard = document.createElement('div');
+        guideCard.className = "bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3";
+        guideCard.innerHTML = `
+          <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="text-xs font-bold text-teal-800 flex items-center gap-2">
+              <i class="fa-solid ${item.icon} text-teal-600"></i> ${item.title}
+            </h3>
+            <span class="text-[10px] bg-teal-50 text-teal-700 font-semibold px-2 py-0.5 rounded-full uppercase">${item.section}</span>
+          </div>
+          
+          <div class="rounded-xl overflow-hidden border border-slate-100">
+            ${SVG_DIAGRAMS[item.id] || ''}
+          </div>
+
+          <div class="space-y-2 text-xs text-slate-600">
+            <p><strong class="text-slate-800">Key Technique:</strong> ${item.instructions}</p>
+            <p class="text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200/60">
+              <strong class="text-amber-900"><i class="fa-solid fa-shield-halved text-xs"></i> Safety:</strong> ${item.safety}
+            </p>
+          </div>
+        `;
+        container.appendChild(guideCard);
+      });
+    }
+
+    async function toggleTask(taskId) {
+      if (!currentLog.completed) currentLog.completed = {};
+      currentLog.completed[taskId] = !currentLog.completed[taskId];
+
+      updateTaskCheckboxes();
+      updateProgressSummary();
+      await saveLogToCloud();
+    }
+
+    function updateTaskCheckboxes() {
+      const completedMap = currentLog.completed || {};
+      EXERCISES.forEach((item) => {
+        const iconContainer = document.getElementById(`check-icon-${item.id}`);
+        if (!iconContainer) return;
+        const isDone = !!completedMap[item.id];
+        
+        if (isDone) {
+          iconContainer.className = "w-6 h-6 rounded-full bg-teal-600 border-2 border-teal-600 flex items-center justify-center text-white transition-all scale-105";
+          iconContainer.querySelector('i').classList.remove('opacity-0');
+        } else {
+          iconContainer.className = "w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-white transition-all";
+          iconContainer.querySelector('i').classList.add('opacity-0');
+        }
+      });
+    }
+
+    function updateProgressSummary() {
+      const completedMap = currentLog.completed || {};
+      const total = EXERCISES.length;
+      const count = Object.values(completedMap).filter(Boolean).length;
+      const percent = Math.round((count / total) * 100);
+
+      document.getElementById('progress-bar').style.width = `${percent}%`;
+      document.getElementById('progress-percent').textContent = `${percent}%`;
+      document.getElementById('completed-count').textContent = `${count} of ${total} tasks complete`;
+    }
+
+    function setupNotesListener() {
+      const notesInput = document.getElementById('daily-notes');
+      let timeout = null;
+      notesInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(async () => {
+          currentLog.notes = notesInput.value;
+          await saveLogToCloud();
+        }, 800);
+      });
+    }
+
+    async function saveLogToCloud() {
+      if (!currentUser) return;
+      showToast("Saving...");
+      try {
+        const logDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'exerciseLogs', selectedDate);
+        await setDoc(logDocRef, {
+          completed: currentLog.completed || {},
+          notes: currentLog.notes || "",
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        showToast("Saved!");
+      } catch (err) {
+        console.warn("Save warning:", err.message);
+      }
+    }
+
+    function setupModal() {
+      const modal = document.getElementById('info-modal');
+      const closeBtn = document.getElementById('close-modal');
+      const okBtn = document.getElementById('modal-ok-btn');
+
+      const closeModal = () => modal.classList.add('hidden');
+      closeBtn.addEventListener('click', closeModal);
+      okBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    function showExerciseInfo(item) {
+      document.getElementById('modal-title').textContent = item.title;
+      document.getElementById('modal-instructions').textContent = item.instructions;
+      document.getElementById('modal-purpose').textContent = item.purpose;
+      document.getElementById('modal-safety').textContent = item.safety;
+      
+      const svgContainer = document.getElementById('modal-svg-container');
+      svgContainer.innerHTML = SVG_DIAGRAMS[item.id] || '';
+
+      document.getElementById('info-modal').classList.remove('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0');
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
